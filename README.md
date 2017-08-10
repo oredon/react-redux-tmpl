@@ -28,3 +28,12 @@
 * webpack-dev-serverを止め、expressを使ったserverを実装
 * actionに非同期アクションを追加
 * componentsに非同期処理中、非同期処理成功、非同期処理失敗時のview要素を追加
+
+
+# 5.サーバサイドレンダリングを追加
+
+* express.server.jsにURLパターンに応じてfetchの実行とstoreの更新ロジックを追加
+* components側に初期データならAJAXし、それ以外ならAJAXしないよう分岐を変更
+* DevToolを使うとサーバサイドレンダリングとクライアントとで差異が生まれる
+  * NODE_ENV=productionで実行するとうまくいく
+  * windowsならcmdで「set NODE_ENV=production」としてからwebpackやserverを起動させること
