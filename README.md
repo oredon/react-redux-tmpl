@@ -21,3 +21,10 @@
   * listはrouterParamsを検知し、URLパラメータに応じた処理を行う
   * listはアクションを発行するボタンを設置
 * react-router-redux@4.0.8はreact-router4.x.xにまだ対応していない、とのことでreact-router@3.0.5をインストール
+
+
+# 4.非同期処理を追加
+
+* webpack-dev-serverを止め、expressを使ったserverを実装
+* actionに非同期アクションを追加
+* componentsに非同期処理中、非同期処理成功、非同期処理失敗時のview要素を追加
