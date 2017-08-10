@@ -26,7 +26,7 @@ export default class Simple2 extends Component {
     }
   }
   componentDidMount(){//componentDidMountはSSRでは実行されない
-    if(this.props.routerParams.yearmonth === "ajax"){
+    if(this.props.routerParams.yearmonth === "ajax" && this.props.test.testdata == 0){//fetchURLかつ初期データなら取得
       this.props.actionsTest.fetchData({sendDataYearMonth: this.props.routerParams.yearmonth});
     }
   }

@@ -5,7 +5,7 @@ import { routerMiddleware } from 'react-router-redux';
 import { browserHistory } from 'react-router';
 
 // DevTools
-import { persistState } from 'redux-devtools';
+//import { persistState } from 'redux-devtools';
 import DevTools from '../containers/DevTools';
 
 /**
@@ -20,14 +20,9 @@ export default function configureStore() {
     applyMiddleware(Thunk),
     applyMiddleware(router_middleware),
     // DevTools
-    DevTools.instrument(),
-    persistState(
-      window.location.href.match(
-        /[?&]debug_session=([^&#]+)\b/
-      )
-    )
+    DevTools.instrument()
   )(createStore);
 
   //ミドルウェア適用済みRedux Storeを返却
-  return finalCreateStore(rootReducer, window.__INITIAL_STATE__);
+  return finalCreateStore(rootReducer, global.__INITIAL_STATE__);
 }
