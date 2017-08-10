@@ -18,5 +18,5 @@ export default function configureStore() {
   )(createStore);
 
   //ミドルウェア適用済みRedux Storeを返却
-  return finalCreateStore(rootReducer, window.__INITIAL_STATE__);
+  return finalCreateStore(rootReducer, global.__INITIAL_STATE__);
 }

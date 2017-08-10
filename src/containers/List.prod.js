@@ -10,7 +10,7 @@ class List extends Component {
 
     return (
       <div>
-        <Simple2 test={test} actionsTest={actionsTest} />
+        <Simple2 test={test} actionsTest={actionsTest} routerParams={routerParams} />
       </div>
     );
   }

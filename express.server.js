@@ -11,6 +11,10 @@ import { renderToString } from "react-dom/server";
 import { createStore, combineReducers, applyMiddleware } from 'redux';
 import { Provider } from 'react-redux';
 import thunk from 'redux-thunk';
+import configureStore from './src/store/configureStore';
+
+// fetch用URLリスト
+import { ajaxUrl } from './src/config';
 
 // routerモジュール
 import { match, RouterContext } from 'react-router'
@@ -19,7 +23,7 @@ import { match, RouterContext } from 'react-router'
 import fetch from 'isomorphic-fetch';
 
 // --------- アプリケーションロード -----------
-import { REQUSET_POSTS, FETCHED_POSTS_FAILURE, FETCHED_POSTS_SUCCESS } from './src/constants/ActionTypes';
+import { REQUEST_POSTS, FETCHED_POSTS_FAILURE, FETCHED_POSTS_SUCCESS } from './src/constants/ActionTypes';
 const routes = require(`./src/routes`).default;
 const reducers = require(`./src/reducers`).default;
 
@@ -40,10 +44,90 @@ app.use('/api/list', function (req, res) {
   },2000)
 });
 
-app.use('/', function (req, res) {
-  res.header('Content-Type', 'text/html;charset=utf-8');
-  return fs.createReadStream(`./index.html`).pipe(res);
-});
+app.use('/', handlerRender);
+
+// --------- Server Side Rendering ---------
+function handlerRender(req, res){
+  match({routes, location: req.url}, (error, redirectLocation, renderProps) => {
+    if (error) {
+      // routerエラー時は500エラーとして返す
+      res.status(500).send(error.message)
+    } else if (redirectLocation) {
+      // リダイレクト対応
+      res.redirect(302, redirectLocation.pathname + redirectLocation.search)
+    } else if (renderProps) {
+      // Server Side Rendering
+      const store = configureStore();
+      let targetYearMonth = false;
+
+      // /list/ajaxはページ遷移と共に非同期通信する
+      const promises = renderProps.components.map((component, index) => {
+        if (component) {
+          //コンポーネントかつfetchが必要ならPromiseを返す
+          if( renderProps.params && renderProps.params.yearmonth ){
+            return new Promise((resolve,reject) => {
+              // 非同期でfetchし、storeを更新する
+              targetYearMonth = renderProps.params.yearmonth;
+              fetch(ajaxUrl.getList + "?sendDataYearMonth=" + targetYearMonth)
+                .then((response) => {return response.json()})
+                .then((resJson) => {
+                  resolve(resJson);
+                }
+              );
+            });
+          }
+        };
+      }).filter((elem) => elem instanceof Promise);
+
+      Promise.all(promises)
+        .then((promiseFinalizeData) => {
+          // monthly-fetchデータがあればdispatch実行
+          if( targetYearMonth !== false ){
+            //データとビューを同期
+            let actionObject = {};
+            actionObject.type = FETCHED_POSTS_SUCCESS;
+            actionObject.data = promiseFinalizeData[0].data;
+            store.dispatch( actionObject );
+          }
+
+          // HTML生成
+          res.status(200).send(renderFullPage(renderProps, store));
+        })
+        .catch(error => console.log(error));
+
+    } else {
+      res.status(404).send('Not found')
+    }
+  });
+}
+
+function renderFullPage(renderProps, store) {
+  // store情報を取得
+  const initialState = store.getState();
+
+  // コンポーネントのHTMLをStringとして取得
+  const html = renderToString(
+    <Provider store={store}>
+      <RouterContext {...renderProps} />
+    </Provider>
+  );
+
+  return `
+    <!doctype html>
+    <html>
+      <head>
+        <title>react-redux-react-router-ssr</title>
+      </head>
+      <body>
+        <div id="root">${html}</div>
+        <script>
+          window.__INITIAL_STATE__ = ${JSON.stringify(initialState)}
+        </script>
+        <script src="/static/bundle.js"></script>
+      </body>
+    </html>
+  `
+}
 
 // --------- Express Listening ---------
 app.listen(port, `localhost`, () => {
